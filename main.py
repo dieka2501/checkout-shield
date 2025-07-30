@@ -42,7 +42,7 @@ def lambda_handler(event, context):
         # login_button.click()
 
         print("✅ Login dikirim")
-        driver.save_screenshot("after_login.png")
+        # driver.save_screenshot("after_login.png")
         # Tunggu tambahan 30 detik jika diperlukan
         time.sleep(10)
         
@@ -53,7 +53,7 @@ def lambda_handler(event, context):
             )
             print("✅ Login berhasil dan elemen user muncul.")            
             # Ambil screenshot setelah login berhasil dan halaman utama muncul
-            driver.save_screenshot("after_login_success.png")
+            # driver.save_screenshot("after_login_success.png")
             print("📸 Screenshot disimpan.")
             # --- MULAI PROSES CHECK OUT ---
             attendance_buttons = driver.find_elements(By.CLASS_NAME, "btn-attendance")
@@ -69,7 +69,7 @@ def lambda_handler(event, context):
                 print("🟢 Tombol Check Out ditemukan, klik sekarang...")
                 check_out_button.click()
                 time.sleep(3)  # tunggu animasi atau pop-up
-                driver.save_screenshot("after_checkout_clicked.png")
+                # driver.save_screenshot("after_checkout_clicked.png")
                 print("📸 Screenshot setelah klik Check Out disimpan.")
                 try:
                     print('Check pop up confirmation')
@@ -89,30 +89,36 @@ def lambda_handler(event, context):
                     
                     if confirm_btn:
                         confirm_btn.click()
-                        send_telegram('Check out button diklik')
+                        
                         print('Button check out diklik')
                         time.sleep(1)
-                        driver.save_screenshot('check_out_success.png')
+                        send_telegram('Check out berhasil dilakukan')
+                        # driver.save_screenshot('check_out_success.png')
                     else:
                         print('Button check out gagal diklik')
                         time.sleep(1)
-                        driver.save_screenshot('check_out_failed.png')
+                        send_telegram('Button check out gagal diklik')
+                        # driver.save_screenshot('check_out_failed.png')
                     
                 except Exception as e_confirm:
                     print(e_confirm)
+                    send_telegram(str(e_confirm))
                 
             else:
                 print("⚪ Tidak ada tombol Check Out hari ini.")
-                driver.save_screenshot("no_checkout_button.png")
+                send_telegram("Tidak ada tombol Check Out hari ini.")
+                # driver.save_screenshot("no_checkout_button.png")
         except Exception as e_login:
             print("⚪ Tidak ada tombol Check Out hari ini.")
             print(e_login)
-            driver.save_screenshot("no_checkout_button.png") 
+            send_telegram(str(e_login))
+            # driver.save_screenshot("no_checkout_button.png") 
         
 
     except Exception as e:
-        print("❗Terjadi error:", str(e))        
-        driver.save_screenshot("login_fail_debug.png")
+        print("❗Terjadi error:", str(e))      
+        send_telegram(str(e))  
+        # driver.save_screenshot("login_fail_debug.png")
     finally:
         driver.quit()
 

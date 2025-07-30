@@ -1,0 +1,4 @@
+beautifulsoup4==4.13.4
+dotenv==0.9.9
+requests==2.32.4
+selenium==4.34.2
