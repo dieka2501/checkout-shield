@@ -24,7 +24,7 @@ def lambda_handler(event, context):
     try:
         dashboard_url = os.getenv('DASHBOARD_URL')
         email = os.getenv('EMAIL')
-        password = os.getenv('PASSWORD')
+        password = os.getenv('PASSWORD')        
         driver.get(dashboard_url)
         h1 = WebDriverWait(driver, 15).until( EC.presence_of_element_located((By.TAG_NAME, "h1")))
 
@@ -88,8 +88,7 @@ def lambda_handler(event, context):
                             break                    
                     
                     if confirm_btn:
-                        confirm_btn.click()
-                        
+                        confirm_btn.click()                        
                         print('Button check out diklik')
                         time.sleep(1)
                         send_telegram('Check out berhasil dilakukan')
@@ -114,7 +113,7 @@ def lambda_handler(event, context):
             send_telegram(str(e_login))
             # driver.save_screenshot("no_checkout_button.png") 
         
-
+        
     except Exception as e:
         print("❗Terjadi error:", str(e))      
         send_telegram(str(e))  
@@ -124,12 +123,15 @@ def lambda_handler(event, context):
 
 def send_telegram(message):
     token = os.getenv("TELE_TOKEN")
+    # print(token)
     chatid = os.getenv("TELE_CHATID")
+    # print(chatid)
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {        
-        "chatid":chatid,
+        "chat_id":chatid,
         "text":message,
         "parse_mode":'HTML'
     }
-    response = requests.post(url,payload)
+    response = requests.post(url,data=payload)
+    # print(response)
     return response
