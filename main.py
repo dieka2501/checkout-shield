@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 load_dotenv()
 
 def lambda_handler(event, context):
@@ -23,7 +24,7 @@ def lambda_handler(event, context):
 
     driver = webdriver.Chrome(options=options)
     try:
-        now = datetime.now()
+        now = datetime.now(ZoneInfo("Asia/Jakarta"))         
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
         print(date_time)
         send_telegram('Bot aktif di tanggal ' + str(date_time))
@@ -124,8 +125,7 @@ def lambda_handler(event, context):
                 print("⚪ Tidak ada tombol Check Out hari ini.")
                 send_telegram("Tidak ada tombol Check Out hari ini.")
                 # driver.save_screenshot("no_checkout_button.png")
-        except Exception as e_login:
-            print("⚪ Tidak ada tombol Check Out hari ini.")
+        except Exception as e_login:            
             print(e_login)
             send_telegram(str(e_login))
             # driver.save_screenshot("no_checkout_button.png")         
