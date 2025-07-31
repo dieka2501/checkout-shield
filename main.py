@@ -24,7 +24,9 @@ def lambda_handler(event, context):
     try:
         dashboard_url = os.getenv('DASHBOARD_URL')
         email = os.getenv('EMAIL')
-        password = os.getenv('PASSWORD')        
+        password = os.getenv('PASSWORD')  
+        send_telegram('Test Telegram')        
+        '''
         driver.get(dashboard_url)
         h1 = WebDriverWait(driver, 15).until( EC.presence_of_element_located((By.TAG_NAME, "h1")))
 
@@ -39,7 +41,7 @@ def lambda_handler(event, context):
         # Klik tombol Login
         login_button = driver.find_element(By.XPATH, "//button[contains(text(), 'Login')]")
         driver.execute_script("arguments[0].click();", login_button)
-        # login_button.click()
+        login_button.click()
 
         print("✅ Login dikirim")
         # driver.save_screenshot("after_login.png")
@@ -112,7 +114,7 @@ def lambda_handler(event, context):
             print(e_login)
             send_telegram(str(e_login))
             # driver.save_screenshot("no_checkout_button.png") 
-        
+        '''
         
     except Exception as e:
         print("❗Terjadi error:", str(e))      
@@ -133,5 +135,5 @@ def send_telegram(message):
         "parse_mode":'HTML'
     }
     response = requests.post(url,data=payload)
-    # print(response)
+    print(response)
     return response
