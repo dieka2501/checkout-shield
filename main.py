@@ -10,7 +10,40 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import re
+from urllib.parse import urlparse,unquote
 load_dotenv()
+
+def extract_gmaps_latlon(url: str):
+    """
+    Return: (lat, lon, source) atau None kalau tidak ketemu.
+    source: 'pin' (koordinat tempat), 'viewport', atau 'param'
+    """
+    s = unquote(url)
+
+    # 1) Koordinat pin: !3d<lat>!4d<lon>  (urutan bisa juga 4d lon lalu 3d lat)
+    m = re.search(r'!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)', s)
+    if m:
+        lat, lon = m.groups()
+        return float(lat), float(lon), 'pin'
+    m = re.search(r'!4d(-?\d+(?:\.\d+)?)!3d(-?\d+(?:\.\d+)?)', s)
+    if m:
+        lon, lat = m.groups()
+        return float(lat), float(lon), 'pin'
+
+    # 2) Viewport center: @<lat>,<lon>,
+    m = re.search(r'@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),', s)
+    if m:
+        lat, lon = m.groups()
+        return float(lat), float(lon), 'viewport'
+
+    # 3) ll=<lat>,<lon> atau q=<lat>,<lon>
+    m = re.search(r'[?&](?:ll|q|query)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)', s)
+    if m:
+        lat, lon = m.groups()
+        return float(lat), float(lon), 'param'
+
+    return None
 
 def lambda_handler(event, context):
     session = requests.Session()
@@ -30,9 +63,23 @@ def lambda_handler(event, context):
         send_telegram('Bot aktif di tanggal ' + str(date_time))
         dashboard_url = os.getenv('DASHBOARD_URL')
         email = os.getenv('EMAIL')
-        password = os.getenv('PASSWORD')  
+        password = os.getenv('PASSWORD') 
+        url = os.getenv('GMAPS_URL') 
+        lat, lon, _ = extract_gmaps_latlon(url)
+        lat = float(lat)
+        lon = float(lon)
+        acc = float(25)
+        origin = get_origin(dashboard_url)
+        # print(lat)
+        # print(lon)
+        # print(_)
+        # print(origin)
+        grant_geo_and_set_location(driver, origin, lat, lon, acc)
+        
+        # breakpoint()
         driver.get(dashboard_url)
-
+        
+        
         # Tunggu halaman login muncul
         WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.TAG_NAME, "h1")))
 
@@ -60,7 +107,7 @@ def lambda_handler(event, context):
 
         # Gunakan script click untuk jaga-jaga
         driver.execute_script("arguments[0].click();", login_button)
-        # driver.save_screenshot("after_login.png")
+        driver.save_screenshot("after_login.png")
         # Tunggu tambahan 30 detik jika diperlukan
         time.sleep(10)
         
@@ -110,12 +157,12 @@ def lambda_handler(event, context):
                         print('Button check out diklik')
                         time.sleep(1)
                         send_telegram('Check out berhasil dilakukan')
-                        # driver.save_screenshot('check_out_success.png')
+                        driver.save_screenshot('check_out_success.png')
                     else:
                         print('Button check out gagal diklik')
                         time.sleep(1)
                         send_telegram('Button check out gagal diklik')
-                        # driver.save_screenshot('check_out_failed.png')
+                        driver.save_screenshot('check_out_failed.png')
                     
                 except Exception as e_confirm:
                     print(e_confirm)
@@ -153,3 +200,19 @@ def send_telegram(message):
     except Exception as e:        
         print('Telegram response' + str(e))
     
+def grant_geo_and_set_location(driver, origin: str, lat: float, lon: float, accuracy: float = 25.0):
+    # Izinkan geolocation untuk origin webapp
+    driver.execute_cdp_cmd("Browser.grantPermissions", {
+        "origin": origin,
+        "permissions": ["geolocation"]
+    })
+    # Override koordinat geolocation
+    driver.execute_cdp_cmd("Emulation.setGeolocationOverride", {
+        "latitude": float(lat),
+        "longitude": float(lon),
+        "accuracy": float(accuracy)
+    })
+
+def get_origin(url: str) -> str:
+    p = urlparse(url)
+    return f"{p.scheme}://{p.netloc}"
